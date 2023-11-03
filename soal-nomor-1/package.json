@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "route": "^0.2.5",
     "routes": "^2.1.0"
   }
 }
