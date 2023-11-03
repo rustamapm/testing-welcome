@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  nodejs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: testing/welcome:latest
+    restart: unless-stopped
+    ports:
+      - "8000:5000"

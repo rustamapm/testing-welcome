@@ -1,0 +1,58 @@
+name: Build and Push a Docker image Branch
+on:
+  push:
+    branches: 
+      - 'main'
+    tags:        
+      - '**'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-push-branch:
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Log in to the Container registry
+        run: docker login -u ${{ github.actor }} -p ${{ secrets.GHCR_TOKEN }} ${{ env.REGISTRY }}
+
+      - name: Build Docker Image
+        run: docker build -t "${{ env.REGISTRY }}/${{github.repository}}" .
+        
+      - name: Push Docker Image to Github Container Registry
+        run: docker push "${{ env.REGISTRY }}/${{github.repository}}"
+
+  build-push-release:
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Log in to the Container registry
+        run: docker login -u ${{ github.actor }} -p ${{ secrets.GHCR_TOKEN }} ${{ env.REGISTRY }}
+
+      - name: Build Docker Image
+        run: docker build -t "${{ env.REGISTRY }}/${{github.repository}}:${{github.ref_name}}" .
+        
+      - name: Push Docker Image to Github Container Registry
+        run: docker push "${{ env.REGISTRY }}/${{github.repository}}:${{github.ref_name}}"
+
+
+# BONUS
+#      - name: Push Docker Image to VM
+#        run: |-
+#          ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }}
+#          docker run -d -p 8000:5000 "${{ env.REGISTRY }}/${{github.repository}}:${{github.ref_name}}"

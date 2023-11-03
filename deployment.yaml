@@ -1,0 +1,92 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: welcome
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: welcome-configmap
+  namespace: welcome
+data:
+  README.md: |
+    EXAMPLE CONFIGMAP
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: welcome-secret
+  namespace: welcome
+stringData:
+  EXAMPLE: This is Encrypted
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: welcome-app
+  namespace: welcome
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: welcome-app
+  template:
+    metadata:
+      labels:
+        name: welcome-app
+    spec:
+      containers:
+        - name: welcome
+          image: ghcr.io/rustamapm/testing-welcome:main
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+          - name: welcome-configmap-volume
+            mountPath: /usr/src/app/README.md
+            subPath: README.md
+            readOnly: true
+          envFrom:
+          - secretRef:
+                name: welcome-secret
+      volumes:
+        - name: welcome-configmap-volume
+          configMap:
+            name: welcome-configmap
+          
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: welcome-service
+  namespace: welcome
+spec:
+  selector:
+    name: welcome-app
+  type: ClusterIP
+  ports:
+  - port: 8000
+    targetPort: 5000
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: welcome-ingress
+  namespace: welcome
+spec:
+  rules:
+    - host:
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: welcome-service
+                port:
+                  number: 8000
